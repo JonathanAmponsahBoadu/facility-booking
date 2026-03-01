@@ -1,6 +1,8 @@
 package com.university.facility_booking.controller;
 
 import com.university.facility_booking.service.BookingService;
+
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
@@ -14,6 +16,7 @@ import java.util.List;
 @RequestMapping("/availability")
 @RequiredArgsConstructor
 @CrossOrigin(origins = "*")
+@SecurityRequirement(name = "bearerAuth")
 public class AvailabilityController {
 
     private final BookingService bookingService;

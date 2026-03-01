@@ -1,8 +1,13 @@
 package com.university.facility_booking.service;
 
 import com.university.facility_booking.model.Booking;
+import com.university.facility_booking.model.Facility;
 import com.university.facility_booking.repository.BookingRepository;
 import com.university.facility_booking.repository.FacilityRepository;
+import com.university.facility_booking.repository.UserRepository;
+import com.university.facility_booking.model.User;
+
+
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -17,7 +22,8 @@ public class BookingService {
 
     private final BookingRepository bookingRepository;
     private final FacilityRepository facilityRepository;
-
+private final UserRepository userRepository;
+    
     public List<Booking> getAllBookings() {
         return bookingRepository.findAll();
     }
@@ -26,22 +32,31 @@ public class BookingService {
         return bookingRepository.findById(id);
     }
 
-    public Booking createBooking(Booking booking) {
-        // Check for conflicts
-        List<Booking> conflicts = bookingRepository.findConflictingBookings(
-            booking.getFacility().getId(),
-            booking.getDate(),
-            booking.getStartTime(),
-            booking.getEndTime()
-        );
+public Booking createBooking(Booking booking) {
+    List<Booking> conflicts = bookingRepository.findConflictingBookings(
+        booking.getFacility().getId(),
+        booking.getDate(),
+        booking.getStartTime(),
+        booking.getEndTime()
+    );
 
-        if (!conflicts.isEmpty()) {
-            throw new RuntimeException("Booking conflict: the facility is already booked for this time slot.");
-        }
-
-        booking.setStatus("CONFIRMED");
-        return bookingRepository.save(booking);
+    if (!conflicts.isEmpty()) {
+        throw new RuntimeException("Booking conflict: the facility is already booked for this time slot.");
     }
+
+    // Fetch actual User from DB
+    User user = userRepository.findById(booking.getUser().getId())
+        .orElseThrow(() -> new RuntimeException("User not found"));
+    booking.setUser(user);
+
+    // Fetch actual Facility from DB
+    Facility facility = facilityRepository.findById(booking.getFacility().getId())
+        .orElseThrow(() -> new RuntimeException("Facility not found"));
+    booking.setFacility(facility);
+
+    booking.setStatus("CONFIRMED");
+    return bookingRepository.save(booking);
+}
 
     public Booking updateBooking(Long id, Booking updatedBooking) {
         Booking existing = bookingRepository.findById(id)
